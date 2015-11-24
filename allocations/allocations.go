@@ -1,9 +1,13 @@
 package allocations
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 func testReflectAllocations(input interface{}) bool {
 
+	fmt.Println("HERE")
 	val := reflect.ValueOf(input)
 
 	switch val.Kind() {
@@ -31,27 +35,77 @@ func testBasicAllocations(val interface{}) bool {
 
 	switch val.(type) {
 
-	case string:
-		s := val.(string)
+	case string, float64:
 
-		return s == "test"
+		return testReflectAllocations(reflect.ValueOf(val).Pointer())
+		// s := val.(string)
 
-	case float64:
-		f := val.(float64)
+		// return s == "test"
 
-		return f == 1.123
+		// case float64:
+		// 	return testReflectAllocations(reflect.ValueOf(val).Pointer())
+		// f := val.(float64)
+
+		// return f == 1.123
 	}
+
+	return testReflectAllocations(reflect.ValueOf(val))
 
 	return true
 }
 
 // no gain over testReflectAllocations
-func testHybridAllocations(val interface{}) (bool, bool) {
+func testHybridAllocations(val interface{}) bool {
 
+	ok1, _ := testBasicValue(val)
+	// if !ok {
+	// 	return testReflectAllocations(val)
+	// }
+
+	return ok1
 	// val := reflect.ValueOf(input)
 
 	// fmt.Println(val.(type))
 
+	// switch val.(type) {
+
+	// case string:
+	// 	s := val.(string)
+
+	// 	return s == "test", true
+
+	// case float64:
+	// 	f := val.(float64)
+
+	// 	return f == 1.123, true
+
+	// 	// default:
+	// 	// 	testReflectAllocations(val)
+	// 	// nVal := reflect.ValueOf(val)
+	// 	// // if nVal.Kind() == reflect.Ptr {
+	// 	// // 	return testHybridAllocations(nVal.Elem().Interface())
+	// 	// // }
+
+	// 	// switch nVal.Kind() {
+
+	// 	// case reflect.String:
+	// 	// 	s := nVal.Elem().String()
+
+	// 	// 	return s == "test"
+
+	// 	// case reflect.Float64:
+	// 	// 	f := nVal.Elem().Float()
+
+	// 	// 	return f == 1.123
+	// 	// }
+	// }
+
+	// return false, false
+	// fmt.Println("HERE")
+	// return testReflectAllocations(val)
+}
+
+func testBasicValue(val interface{}) (bool, bool) {
 	switch val.(type) {
 
 	case string:
@@ -86,6 +140,4 @@ func testHybridAllocations(val interface{}) (bool, bool) {
 	}
 
 	return false, false
-	// fmt.Println("HERE")
-	// return testReflectAllocations(val)
 }
