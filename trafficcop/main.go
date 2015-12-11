@@ -1,17 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
-	"github.com/go-playground/traffic-cop"
+	"github.com/go-playground/rum"
 )
 
 // CustomContext ...
 type CustomContext struct {
-	trafficcop.Context
+	rum.Context
 }
 
 func (ctx *CustomContext) Test() string {
@@ -33,63 +35,73 @@ func main() {
 
 	fs := http.StripPrefix("/assets/", http.FileServer(http.Dir("assets")))
 
-	tcop := trafficcop.New()
-	tcop.Use(Logger())
-	tcop.Use(func(h trafficcop.HandlerFunc) trafficcop.HandlerFunc {
-		return func(ctx trafficcop.Context) {
-			h(&CustomContext{ctx})
-		}
+	r := rum.New()
+
+	// nc := func() rum.Context {
+	// 	return &CustomContext{rum.NewContext(nil, rum.NewResponse(nil), r)}
+	// }
+
+	// r.SetContextNew(nc)
+
+	r.Use(Logger())
+	// r.Use(func(h rum.HandlerFunc) rum.HandlerFunc {
+	// 	return func(ctx rum.Context) {
+	// 		h(&CustomContext{ctx})
+	// 	}
+	// })
+	r.Get("/", root)
+	r.Get("/assets/*", func(c *rum.Context) {
+		fs.ServeHTTP(c.Response, c.Request)
 	})
-	tcop.Get("/", root)
-	tcop.Get("/assets/*", func(c trafficcop.Context) {
-		fs.ServeHTTP(c.Response().Writer(), c.Request())
-	})
 
-	g1 := tcop.Group("/route1/")
-	// g1.Use(Logger2())
-	g1.Get("", route1)
-	g1.Get("a/", route1a)
+	r.Get("/teachers/list", route1)
+	r.Get("/teachers/:id/profile", route2)
 
-	g2 := tcop.Group("/route2/")
-	// g2.Use(Logger2())
-	g2.Get("", route2)
-	g2.Get(":name/", route2a)
+	// g1 := r.Group("/route1/")
+	// // g1.Use(Logger2())
+	// g1.Get("", route1)
+	// g1.Get("a/", route1a)
 
-	http.ListenAndServe(":3006", tcop)
+	// g2 := r.Group("/route2/")
+	// // g2.Use(Logger2())
+	// g2.Get("", route2)
+	// g2.Get(":name/", route2a)
+
+	http.ListenAndServe(":3006", r)
 }
 
-func root(ctx trafficcop.Context) {
+func root(ctx *rum.Context) {
 
-	err := t.ExecuteTemplate(ctx.Response(), "T", "Dean Karn")
-	if err != nil {
-		http.Error(ctx.Response(), "Error Executing Template", http.StatusInternalServerError)
-	}
+	// err := t.ExecuteTemplate(ctx.Response(), "T", "Dean Karn")
+	// if err != nil {
+	// 	http.Error(ctx.Response(), "Error Executing Template", http.StatusInternalServerError)
+	// }
 
-	// ctx.Response().Write([]byte(fmt.Sprint(reflect.TypeOf(ctx))))
+	ctx.Response.Write([]byte(fmt.Sprint(reflect.TypeOf(ctx))))
 	// ctx.Response().Write([]byte(fmt.Sprint(reflect.TypeOf(ctx), ctx.(*CustomContext).Test())))
 }
 
-func route1(ctx trafficcop.Context) {
-	ctx.Response().Write([]byte("Route 1"))
+func route1(ctx *rum.Context) {
+	ctx.Response.Write([]byte("Route 1"))
 }
 
-func route2(ctx trafficcop.Context) {
-	ctx.Response().Write([]byte("Route 2"))
+func route2(ctx *rum.Context) {
+	ctx.Response.Write([]byte("Route 2"))
 }
 
-func route1a(ctx trafficcop.Context) {
-	ctx.Response().Write([]byte("Route 1a"))
+func route1a(ctx *rum.Context) {
+	ctx.Response.Write([]byte("Route 1a"))
 }
 
-func route2a(ctx trafficcop.Context) {
-	ctx.Response().Write([]byte("Route 2a " + ctx.Param("name")))
+func route2a(ctx *rum.Context) {
+	ctx.Response.Write([]byte("Route 2a " + ctx.Param("name")))
 }
 
-func Logger() trafficcop.MiddlewareFunc {
+func Logger() rum.MiddlewareFunc {
 
-	return func(h trafficcop.HandlerFunc) trafficcop.HandlerFunc {
-		return func(c trafficcop.Context) {
-			req := c.Request()
+	return func(h rum.HandlerFunc) rum.HandlerFunc {
+		return func(c *rum.Context) {
+			req := c.Request
 			// res := c.Response()
 			// logger := c.Echo().Logger()
 
@@ -134,11 +146,11 @@ func Logger() trafficcop.MiddlewareFunc {
 	}
 }
 
-func Logger2() trafficcop.MiddlewareFunc {
+func Logger2() rum.MiddlewareFunc {
 
-	return func(h trafficcop.HandlerFunc) trafficcop.HandlerFunc {
-		return func(c trafficcop.Context) {
-			req := c.Request()
+	return func(h rum.HandlerFunc) rum.HandlerFunc {
+		return func(c *rum.Context) {
+			req := c.Request
 			// res := c.Response()
 			// logger := c.Echo().Logger()
 

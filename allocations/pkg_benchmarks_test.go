@@ -1,11 +1,17 @@
-package allocations
+package allocations_test
+
+import (
+	"testing"
+
+	"github.com/joeybloggs/proof-of-concept/allocations"
+)
 
 // func BenchmarkReflectString(b *testing.B) {
 
 // 	s := "test"
 
 // 	for n := 0; n < b.N; n++ {
-// 		testReflectAllocations(s)
+// 		allocations.TestReflectAllocations(s)
 // 	}
 // }
 
@@ -14,7 +20,7 @@ package allocations
 // 	f := 1.123
 
 // 	for n := 0; n < b.N; n++ {
-// 		testReflectAllocations(f)
+// 		allocations.TestReflectAllocations(f)
 // 	}
 // }
 
@@ -25,7 +31,7 @@ package allocations
 // 	s = &tmp
 
 // 	for n := 0; n < b.N; n++ {
-// 		TestReflectAllocations(s)
+// 		allocations.TestReflectAllocations(s)
 // 	}
 // }
 
@@ -36,9 +42,49 @@ package allocations
 // 	f = &tmp
 
 // 	for n := 0; n < b.N; n++ {
-// 		TestReflectAllocations(f)
+// 		allocations.TestReflectAllocations(f)
 // 	}
 // }
+
+func BenchmarkReflectStructPtr(b *testing.B) {
+
+	type Test struct {
+		String  string
+		Float64 float64
+	}
+
+	t := &Test{
+		String:  "test",
+		Float64: 1.123,
+	}
+
+	// t := new(Test)
+	// t.String = "test"
+	// t.Float64 = 1.123
+
+	for n := 0; n < b.N; n++ {
+		allocations.TestReflectStructAllocations(t)
+	}
+}
+
+func BenchmarkStructComplexFailureParallel(b *testing.B) {
+
+	type Test struct {
+		String  string
+		Float64 float64
+	}
+
+	t := &Test{
+		String:  "test",
+		Float64: 1.123,
+	}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			allocations.TestReflectStructAllocations(t)
+		}
+	})
+}
 
 // func BenchmarkBasicString(b *testing.B) {
 
@@ -95,26 +141,5 @@ package allocations
 
 // 	for n := 0; n < b.N; n++ {
 // 		testHybridAllocations(f)
-// 	}
-// }
-
-// func BenchmarkReflectStructPtr(b *testing.B) {
-
-// 	type Test struct {
-// 		String  string
-// 		Float64 float64
-// 	}
-
-// 	t := &Test{
-// 		String:  "test",
-// 		Float64: 1.123,
-// 	}
-
-// 	// t := new(Test)
-// 	// t.String = "test"
-// 	// t.Float64 = 1.123
-
-// 	for n := 0; n < b.N; n++ {
-// 		TestReflectStructAllocations(t)
 // 	}
 // }
